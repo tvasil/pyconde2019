@@ -1,0 +1,94 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+
+library(dplyr)
+library(data.table)
+library(magrittr)
+library(ggplot2)
+library(ggrepel)
+path <- '/Users/tania/Desktop/IE_Bootcamp/Data_Viz/data_visualization_r/data/economist_data.csv'
+
+
+countries_to_label <- c("Russia", "Venezuela", "Iraq", "Myanmar", "Sudan",
+                        "Afghanistan", "Congo", "Greece", "Argentina", "Brazil",
+                        "India", "Italy", "China", "South Africa", "Spain",
+                        "Botswana", "Cape Verde", "Bhutan", "Rwanda", "France",
+                        "United States", "Germany", "Britain", "Barbados", "Norway", "Japan",
+                        "New Zealand", "Singapore")
+
+# Change the levels of the continents so they are easier to read in the legend
+factor_new_levels <- list("EU W. Europe" = "OECD",
+                          "Americas" = "Americas",
+                          "Asia Pacific" = "Asia &\nOceania",
+                          "East EU Cemt Asia" = "Central &\nEastern Europe",
+                          "MENA" = "Middle East &\nnorth Africa", 
+                          "SSA" = "Sub-Saharan\nAfrica")
+
+path %>%  # path in the directory
+  fread() %>%   # read the file
+    .[,c('Country','HDI','CPI','Region')] %>% # Grab only the 4 columns we need
+       distinct() %>%   # Make sure they're unique
+          setnames(names(.),tolower(names(.))) %>%  # lowercase the column names for easier accessing
+            .[,region :=factor(region, levels = names(factor_new_levels), # change the factor levels for the regions
+                               labels = unlist(factor_new_levels))] %>% 
+               .[,country := ifelse(country %in% countries_to_label,country,NA)] -> df
+
+df[!is.na(df$country)]
+
+```
+
+Make some sample statistical transformations
+```{r}
+
+library(xkcd)
+library(ggthemes)
+df1 <- df[!is.na(df$country)]
+
+ggplot(df1) + geom_col(aes(y = cpi))
+
+
+gapminder <- read.csv(file = 'data/gapminder.csv')
+
+head(gapminder)
+
+ggplot(gapminder) + geom_point(aes(x = gdpPercap, y = lifeExp, color = continent, size = pop)) + 
+  theme_classic() + 
+  theme(legend.position="right") + 
+  scale_x_continuous(labels = comma) + 
+  scale_size_continuous(labels = comma, range = c(0,15)) + 
+  ggtitle("GDP Per Capita vs Life Expectancy around the world")
+```
+Diamonds dataset again
+```{r}
+head(diamonds)
+
+ggplot(diamonds) + geom_histogram(aes(x = price), bins = 60, fill = '#45B08c') + theme_void()
+```
+
+More diamonds - facet grid
+```{r}
+ggplot(diamonds) + 
+  geom_smooth(aes(x = carat, y = price)) + 
+  theme_clean() +
+  theme(axis.title=element_text(size=18), panel.border = element_blank()) + 
+  scale_y_continuous(labels = comma) + 
+  facet_wrap(facets = ~cut, )
+```
+coordinates
+```{r}
+ggplot(diamonds, aes(x= '', fill = cut)) + 
+  geom_bar(width = 1) +
+  ggtitle("Diamond count by cut") +
+  theme_classic() +
+  scale_y_continuous(labels = comma) +
+  theme(axis.title=element_text(size=16), panel.border = element_blank()) 
+```
+
